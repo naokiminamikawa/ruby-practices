@@ -1,40 +1,32 @@
 #!/usr/bin/env ruby
-
 input_score = ARGV[0]
 score_tokens = input_score.split(',')
 
 # 各投球のピン数配列（rolls）
 rolls = score_tokens.map do |token|
-  case token
-  when 'X'
-    10
-  else
-    token.to_i
-  end
+  token == 'X' ? 10 : token.to_i
 end
 
+roll_index = 0
 
-total_score = 0
-roll_index = 0  # 現在見ている投球位置
-
-10.times do |frame_number|
+total_score = 10.times.sum do
   if rolls[roll_index] == 10
-    # ストライク: 次の2投をボーナスとして加算
-    total_score += 10 + rolls[roll_index + 1] + rolls[roll_index + 2]
+    # ストライク
+    score = 10 + rolls[roll_index + 1, 2].sum
     roll_index += 1
+    score
   else
-    first_shot = rolls[roll_index]
-    second_shot = rolls[roll_index + 1]
-    frame_total = first_shot + second_shot
+    frame_total = rolls[roll_index, 2].sum
 
-    if frame_total == 10
-      # スペア: 次の1投をボーナスとして加算
-      total_score += 10 + rolls[roll_index + 2]
-    else
-      total_score += frame_total
-    end
+    score = if frame_total == 10
+                     # スペア
+                     10 + rolls[roll_index + 2]
+                   else
+                     frame_total
+                   end
 
     roll_index += 2
+    score
   end
 end
 
