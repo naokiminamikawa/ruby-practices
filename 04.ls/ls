@@ -1,53 +1,46 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
-# require 'debug'
-# ファイルを取得する関数
+# 定数（④）
+SIZE = 3
+
+# ファイルを取得する関数（③）
 def fetch_files
-  files = Dir.entries('.') # カレントディレクトリのファイルを取得
-  new_files = []
-
-  files.each do |file|
-    new_files << file if !file.start_with?('.') # ドットで始まるファイルは除外
-  end
-
-  new_files.sort # ファイルをアルファベット順にソート
+  Dir.entries('.')
+     .reject { |file| file.start_with?('.') }
+     .sort
 end
 
-# 行列を作成する関数
+# 行列を作成する関数（①②）
 def make_matrix(files, row, col)
   matrix = Array.new(row) { Array.new(col) }
 
-  i = 0
-  while i < files.length # ファイルの数だけループ
-    r = i % row
-    c = i / row
+  (0...files.length).each do |i|
+    c, r = i.divmod(row) # ② divmodで置き換え
 
-    if c < col
-      matrix[r][c] = files[i] # 行列にファイルを配置
-    end
-
-    i += 1
+    matrix[r][c] = files[i] if c < col
   end
 
-  matrix # 行列を返す
+  matrix
 end
 
-# 行列を表示する関数
+# 行列を表示する関数（⑤）
 def print_matrix(matrix)
-  matrix.each do |row| # 行ごとにループ
-    line = ''
+  # 最大文字数を取得（列揃えのため）
+  max_length = matrix.flatten.compact.map(&:length).max || 0
 
-    row.each do |file| # 列ごとにループ
-      if !file.nil?
-        line = "#{line}#{file}   " # ファイル名をスペースで区切って表示
-      end
-    end
+  matrix.each do |row|
+    line = row.map do |file|
+      next '' if file.nil?
+
+      file.ljust(max_length) # 左寄せで幅を揃える
+    end.join('   ')
+
     puts line
   end
 end
 
-# 関数実行
+# 実行
 files = fetch_files
-matrix = make_matrix(files, 3, 3) # 3行3列の行列を作成
+matrix = make_matrix(files, SIZE, SIZE)
 print_matrix(matrix)
