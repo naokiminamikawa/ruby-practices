@@ -1,7 +1,8 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
-# ファイルを取得する関数
+COL = 3
+
 def fetch_files
   Dir.glob('*').sort
 end
@@ -37,10 +38,7 @@ end
 
 # 実行
 files = fetch_files
+row = (files.length.to_f / COL).ceil
 
-# 列数と行数を計算
-col = 3
-row = (files.length.to_f / col).ceil
-
-matrix = make_matrix(files, row, col)
+matrix = make_matrix(files, row, COL)
 print_matrix(matrix)
