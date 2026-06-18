@@ -7,7 +7,6 @@ def fetch_files
   Dir.glob('*').sort
 end
 
-# 行列を作成する関数
 def make_matrix(files, row, col)
   matrix = Array.new(row) { Array.new(col) }
 
@@ -20,7 +19,6 @@ def make_matrix(files, row, col)
   matrix
 end
 
-# 行列を表示する関数
 def print_matrix(matrix)
   # 最大文字数を取得（列揃えのため）
   max_length = matrix.flatten.compact.map(&:length).max || 0
@@ -36,7 +34,6 @@ def print_matrix(matrix)
   end
 end
 
-# 実行
 files = fetch_files
 row = (files.length.to_f / COL).ceil
 
