@@ -11,7 +11,7 @@ def make_matrix(files, row, col)
   matrix = Array.new(row) { Array.new(col) }
 
   (0...files.length).each do |i|
-    c, r = i.divmod(row) # ② divmodで置き換え
+    c, r = i.divmod(row) 
 
     matrix[r][c] = files[i] if c < col
   end
