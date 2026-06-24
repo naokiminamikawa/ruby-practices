@@ -11,7 +11,7 @@ def make_matrix(files, row, col)
   matrix = Array.new(row) { Array.new(col) }
 
   (0...files.length).each do |i|
-    c, r = i.divmod(row) 
+    c, r = i.divmod(row)
 
     matrix[r][c] = files[i] if c < col
   end
@@ -20,14 +20,13 @@ def make_matrix(files, row, col)
 end
 
 def print_matrix(matrix)
-  # 最大文字数を取得（列揃えのため）
   max_length = matrix.flatten.compact.map(&:length).max || 0
 
   matrix.each do |row|
     line = row.map do |file|
       next '' if file.nil?
 
-      file.ljust(max_length) # 左寄せで幅を揃える
+      file.ljust(max_length)
     end.join('   ')
 
     puts line
