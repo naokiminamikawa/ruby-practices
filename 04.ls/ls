@@ -3,8 +3,12 @@
 
 COL = 3
 
-def fetch_files
-  Dir.glob('*').sort
+def fetch_files(args)
+  if args.include?('-a')
+    Dir.glob('{*,.*}').sort
+  else
+    Dir.glob('*').sort
+  end
 end
 
 def make_matrix(files, row, col)
@@ -33,8 +37,7 @@ def print_matrix(matrix)
   end
 end
 
-files = fetch_files
+files = fetch_files(ARGV)
 row = (files.length.to_f / COL).ceil
-
 matrix = make_matrix(files, row, COL)
 print_matrix(matrix)
