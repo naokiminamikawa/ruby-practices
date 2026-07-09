@@ -12,13 +12,9 @@ OptionParser.new do |opts|
 end.parse!
 
 def fetch_files(all: false)
-  if all
-    Dir.glob('*', File::FNM_DOTMATCH)
-       .reject { |file| %w[. ..].include?(file) }
-       .sort
-  else
-    Dir.glob('*').sort
-  end
+  flags = all ? File::FNM_DOTMATCH : 0
+  Dir.glob('*', flags)
+     .reject { |file| %w[. ..].include?(file) }
 end
 
 def make_matrix(files, row, col)
