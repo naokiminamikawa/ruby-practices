@@ -14,7 +14,6 @@ end.parse!
 def fetch_files(all: false)
   flags = all ? File::FNM_DOTMATCH : 0
   Dir.glob('*', flags)
-     .reject { |file| %w[. ..].include?(file) }
 end
 
 def make_matrix(files, row, col)
