@@ -1,10 +1,19 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
+require 'optparse'
 COL = 3
 
-def fetch_files
-  Dir.glob('*').sort
+options = { all: false }
+OptionParser.new do |opts|
+  opts.on('-a') do
+    options[:all] = true
+  end
+end.parse!
+
+def fetch_files(all: false)
+  flags = all ? File::FNM_DOTMATCH : 0
+  Dir.glob('*', flags)
 end
 
 def make_matrix(files, row, col)
@@ -33,8 +42,7 @@ def print_matrix(matrix)
   end
 end
 
-files = fetch_files
+files = fetch_files(all: options[:all])
 row = (files.length.to_f / COL).ceil
-
 matrix = make_matrix(files, row, COL)
 print_matrix(matrix)
