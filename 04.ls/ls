@@ -4,16 +4,15 @@
 require 'optparse'
 COL = 3
 
-options = { all: false }
+options = { reverse: false }
 OptionParser.new do |opts|
-  opts.on('-a') do
-    options[:all] = true
+  opts.on('-r') do
+    options[:reverse] = true
   end
 end.parse!
 
-def fetch_files(all: false)
-  flags = all ? File::FNM_DOTMATCH : 0
-  Dir.glob('*', flags)
+def fetch_files
+  Dir.glob('*')
 end
 
 def make_matrix(files, row, col)
@@ -42,7 +41,8 @@ def print_matrix(matrix)
   end
 end
 
-files = fetch_files(all: options[:all])
+files = fetch_files
+files.reverse! if options[:reverse]
 row = (files.length.to_f / COL).ceil
 matrix = make_matrix(files, row, COL)
 print_matrix(matrix)
