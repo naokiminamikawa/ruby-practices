@@ -2,12 +2,13 @@
 # frozen_string_literal: true
 
 require 'optparse'
+require 'etc'
 COL = 3
 
-options = { reverse: false }
+options = { long: false }
 OptionParser.new do |opts|
-  opts.on('-r') do
-    options[:reverse] = true
+  opts.on('-l') do
+    options[:long] = true
   end
 end.parse!
 
@@ -15,16 +16,43 @@ def fetch_files
   Dir.glob('*')
 end
 
+def permission_string(mode)
+  perms = ''
+  perms += (mode & 0o400).zero? ? '-' : 'r'
+  perms += (mode & 0o200).zero? ? '-' : 'w'
+  perms += (mode & 0o100).zero? ? '-' : 'x'
+  perms += (mode & 0o040).zero? ? '-' : 'r'
+  perms += (mode & 0o020).zero? ? '-' : 'w'
+  perms += (mode & 0o010).zero? ? '-' : 'x'
+  perms += (mode & 0o004).zero? ? '-' : 'r'
+  perms += (mode & 0o002).zero? ? '-' : 'w'
+  perms += (mode & 0o001).zero? ? '-' : 'x'
+  perms
+end
+
 def make_matrix(files, row, col)
   matrix = Array.new(row) { Array.new(col) }
 
   (0...files.length).each do |i|
     c, r = i.divmod(row)
-
     matrix[r][c] = files[i] if c < col
   end
 
   matrix
+end
+
+def make_long_matrix(files)
+  files.map do |file|
+    stat = File.stat(file)
+
+    permission_string(stat.mode) + ' ' +
+      stat.nlink.to_s.rjust(2) + ' ' +
+      Etc.getpwuid(stat.uid).name.ljust(8) + ' ' +
+      Etc.getgrgid(stat.gid).name.ljust(8) + ' ' +
+      stat.size.to_s.rjust(8) + ' ' +
+      stat.mtime.strftime('%b %d %H:%M') + ' ' +
+      file
+  end
 end
 
 def print_matrix(matrix)
@@ -42,7 +70,13 @@ def print_matrix(matrix)
 end
 
 files = fetch_files
-files.reverse! if options[:reverse]
-row = (files.length.to_f / COL).ceil
-matrix = make_matrix(files, row, COL)
-print_matrix(matrix)
+
+if options[:long]
+  make_long_matrix(files).each do |line|
+    puts line
+  end
+else
+  row = (files.length.to_f / COL).ceil
+  matrix = make_matrix(files, row, COL)
+  print_matrix(matrix)
+end
