@@ -17,17 +17,11 @@ def fetch_files
 end
 
 def permission_string(mode)
-  perms = ''
-  perms += (mode & 0o400).zero? ? '-' : 'r'
-  perms += (mode & 0o200).zero? ? '-' : 'w'
-  perms += (mode & 0o100).zero? ? '-' : 'x'
-  perms += (mode & 0o040).zero? ? '-' : 'r'
-  perms += (mode & 0o020).zero? ? '-' : 'w'
-  perms += (mode & 0o010).zero? ? '-' : 'x'
-  perms += (mode & 0o004).zero? ? '-' : 'r'
-  perms += (mode & 0o002).zero? ? '-' : 'w'
-  perms += (mode & 0o001).zero? ? '-' : 'x'
-  perms
+  permission_chars = %w[r w x]
+  9.times.map do |i|
+    mask = 1 << (8 - i)
+    (mode & mask).zero? ? '-' : permission_chars[i % 3]
+  end.join
 end
 
 def make_matrix(files, row, col)
