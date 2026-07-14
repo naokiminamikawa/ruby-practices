@@ -36,15 +36,27 @@ def make_matrix(files, row, col)
 end
 
 def make_long_matrix(files)
+  user_width = files.map{ |file|
+    Etc.getpwuid(File.stat(file).uid).name.length
+  }.max
+
+  group_width = files.map{ |file|
+    Etc.getgrgid(File.stat(file).gid).name.length
+  }.max
+
   files.map do |file|
     stat = File.stat(file)
 
-    permission_string(stat.mode) + ' ' +
-      stat.nlink.to_s.rjust(2) + ' ' +
-      Etc.getpwuid(stat.uid).name.ljust(8) + ' ' +
-      Etc.getgrgid(stat.gid).name.ljust(8) + ' ' +
-      stat.size.to_s.rjust(8) + ' ' +
-      stat.mtime.strftime('%b %d %H:%M') + ' ' +
+    user_name = Etc.getpwuid(stat.uid).name
+    group_name = Etc.getgrgid(stat.gid).name
+
+    [
+      permission_string(stat.mode),
+      stat.nlink.to_s.rjust(2),
+      user_name.ljust(user_width),
+      group_name.ljust(group_width),
+      stat.size.to_s.rjust(8),
+      stat.mtime.strftime('%b %d %H:%M'),
       file
   end
 end
