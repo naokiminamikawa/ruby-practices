@@ -3,9 +3,11 @@
 
 require 'optparse'
 require 'etc'
+
 COL = 3
 
 options = { long: false }
+
 OptionParser.new do |opts|
   opts.on('-l') do
     options[:long] = true
@@ -18,6 +20,7 @@ end
 
 def permission_string(mode)
   permission_chars = %w[r w x]
+
   9.times.map do |i|
     mask = 1 << (8 - i)
     (mode & mask).zero? ? '-' : permission_chars[i % 3]
@@ -35,47 +38,45 @@ def make_matrix(files, row, col)
   matrix
 end
 
+def column_widths(files)
+  {
+    link: files.map { |file| File.lstat(file).nlink.to_s.length }.max,
+    size: files.map { |file| File.lstat(file).size.to_s.length }.max,
+    user: files.map { |file| Etc.getpwuid(File.lstat(file).uid).name.length }.max,
+    group: files.map { |file| Etc.getgrgid(File.lstat(file).gid).name.length }.max
+  }
+end
+
+def file_type(stat)
+  {
+    'file' => '-',
+    'link' => 'l',
+    'directory' => 'd'
+  }[stat.ftype]
+end
+
+def long_format_line(file, widths)
+  stat = File.lstat(file)
+
+  user_name = Etc.getpwuid(stat.uid).name
+  group_name = Etc.getgrgid(stat.gid).name
+
+  [
+    file_type(stat) + permission_string(stat.mode),
+    stat.nlink.to_s.rjust(widths[:link]),
+    user_name.ljust(widths[:user]),
+    group_name.ljust(widths[:group]),
+    stat.size.to_s.rjust(widths[:size]),
+    stat.mtime.strftime('%b %d %H:%M'),
+    file
+  ].join(' ')
+end
+
 def make_long_matrix(files)
-  link_width = files.map{ |file|
-    File.lstat(file).nlink.to_s.length
-  }.max
-
-  size_width = files.map{ |file|
-    File.lstat(file).size.to_s.length
-  }.max
-
-  user_width = files.map{ |file|
-    Etc.getpwuid(File.lstat(file).uid).name.length
-  }.max
-
-  group_width = files.map{ |file|
-    Etc.getgrgid(File.lstat(file).gid).name.length
-  }.max
+  widths = column_widths(files)
 
   files.map do |file|
-    stat = File.lstat(file)
-
-    user_name = Etc.getpwuid(stat.uid).name
-    group_name = Etc.getgrgid(stat.gid).name
-
-    filetype =
-      case stat.ftype
-      when 'file'
-        '-'
-      when 'link'
-        'l'
-      when 'directory'
-        'd'
-      end
-
-    [
-      filetype+permission_string(stat.mode),
-      stat.nlink.to_s.rjust(link_width),
-      user_name.ljust(user_width),
-      group_name.ljust(group_width),
-      stat.size.to_s.rjust(size_width),
-      stat.mtime.strftime('%b %d %H:%M'),
-      file
+    long_format_line(file, widths)
   end
 end
 
