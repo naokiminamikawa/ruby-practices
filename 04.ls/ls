@@ -96,6 +96,12 @@ end
 files = fetch_files
 
 if options[:long]
+  total_blocks = files.sum do |file|
+    File.lstat(file).blocks
+  end
+
+  puts "total #{total_blocks}"
+
   make_long_matrix(files).each do |line|
     puts line
   end
