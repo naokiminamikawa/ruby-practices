@@ -36,6 +36,14 @@ def make_matrix(files, row, col)
 end
 
 def make_long_matrix(files)
+  link_width = files.map{ |file|
+    File.stat(file).nlink.to_s.length
+  }.max
+
+  size_width = files.map{ |file|
+    File.stat(file).size.to_s.length
+  }.max
+
   user_width = files.map{ |file|
     Etc.getpwuid(File.stat(file).uid).name.length
   }.max
@@ -52,10 +60,10 @@ def make_long_matrix(files)
 
     [
       permission_string(stat.mode),
-      stat.nlink.to_s.rjust(2),
+      stat.nlink.to_s.rjust(link_width),
       user_name.ljust(user_width),
       group_name.ljust(group_width),
-      stat.size.to_s.rjust(8),
+      stat.size.to_s.rjust(size_width),
       stat.mtime.strftime('%b %d %H:%M'),
       file
   end
