@@ -37,29 +37,39 @@ end
 
 def make_long_matrix(files)
   link_width = files.map{ |file|
-    File.stat(file).nlink.to_s.length
+    File.lstat(file).nlink.to_s.length
   }.max
 
   size_width = files.map{ |file|
-    File.stat(file).size.to_s.length
+    File.lstat(file).size.to_s.length
   }.max
 
   user_width = files.map{ |file|
-    Etc.getpwuid(File.stat(file).uid).name.length
+    Etc.getpwuid(File.lstat(file).uid).name.length
   }.max
 
   group_width = files.map{ |file|
-    Etc.getgrgid(File.stat(file).gid).name.length
+    Etc.getgrgid(File.lstat(file).gid).name.length
   }.max
 
   files.map do |file|
-    stat = File.stat(file)
+    stat = File.lstat(file)
 
     user_name = Etc.getpwuid(stat.uid).name
     group_name = Etc.getgrgid(stat.gid).name
 
+    filetype =
+      case stat.ftype
+      when 'file'
+        '-'
+      when 'link'
+        'l'
+      when 'directory'
+        'd'
+      end
+
     [
-      permission_string(stat.mode),
+      filetype+permission_string(stat.mode),
       stat.nlink.to_s.rjust(link_width),
       user_name.ljust(user_width),
       group_name.ljust(group_width),
