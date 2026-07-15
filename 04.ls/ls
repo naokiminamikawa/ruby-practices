@@ -38,12 +38,25 @@ def make_matrix(files, row, col)
   matrix
 end
 
-def column_widths(files)
+def file_infos(files)
+  files.map do |file|
+    stat = File.lstat(file)
+
+    {
+      file: file,
+      stat: stat,
+      user_name: Etc.getpwuid(stat.uid).name,
+      group_name: Etc.getgrgid(stat.gid).name
+    }
+  end
+end
+
+def column_widths(file_infos)
   {
-    link: files.map { |file| File.lstat(file).nlink.to_s.length }.max,
-    size: files.map { |file| File.lstat(file).size.to_s.length }.max,
-    user: files.map { |file| Etc.getpwuid(File.lstat(file).uid).name.length }.max,
-    group: files.map { |file| Etc.getgrgid(File.lstat(file).gid).name.length }.max
+    link: file_infos.map { |info| info[:stat].nlink.to_s.length }.max,
+    size: file_infos.map { |info| info[:stat].size.to_s.length }.max,
+    user: file_infos.map { |info| info[:user_name].length }.max,
+    group: file_infos.map { |info| info[:group_name].length }.max
   }
 end
 
@@ -55,28 +68,24 @@ def file_type(stat)
   }[stat.ftype]
 end
 
-def long_format_line(file, widths)
-  stat = File.lstat(file)
-
-  user_name = Etc.getpwuid(stat.uid).name
-  group_name = Etc.getgrgid(stat.gid).name
-
+def long_format_line(info, widths)
   [
-    file_type(stat) + permission_string(stat.mode),
-    stat.nlink.to_s.rjust(widths[:link]),
-    user_name.ljust(widths[:user]),
-    group_name.ljust(widths[:group]),
-    stat.size.to_s.rjust(widths[:size]),
-    stat.mtime.strftime('%b %d %H:%M'),
-    file
+    file_type(info[:stat]) + permission_string(info[:stat].mode),
+    info[:stat].nlink.to_s.rjust(widths[:link]),
+    info[:user_name].ljust(widths[:user]),
+    info[:group_name].ljust(widths[:group]),
+    info[:stat].size.to_s.rjust(widths[:size]),
+    info[:stat].mtime.strftime('%b %d %H:%M'),
+    info[:file]
   ].join(' ')
 end
 
 def make_long_matrix(files)
-  widths = column_widths(files)
+  infos = file_infos(files)
+  widths = column_widths(infos)
 
-  files.map do |file|
-    long_format_line(file, widths)
+  infos.map do |info|
+    long_format_line(info, widths)
   end
 end
 
@@ -97,14 +106,18 @@ end
 files = fetch_files
 
 if options[:long]
-  total_blocks = files.sum do |file|
-    File.lstat(file).blocks
+  infos = file_infos(files)
+
+  total_blocks = infos.sum do |info|
+    info[:stat].blocks
   end
 
   puts "total #{total_blocks}"
 
-  make_long_matrix(files).each do |line|
-    puts line
+  widths = column_widths(infos)
+
+  infos.each do |info|
+    puts long_format_line(info, widths)
   end
 else
   row = (files.length.to_f / COL).ceil
