@@ -44,7 +44,12 @@ def file_infos(files)
 
     {
       file: file,
-      stat: stat,
+      file_type: stat.ftype,
+      mode: stat.mode,
+      nlink: stat.nlink,
+      size: stat.size,
+      mtime: stat.mtime,
+      blocks: stat.blocks,
       user_name: Etc.getpwuid(stat.uid).name,
       group_name: Etc.getgrgid(stat.gid).name
     }
@@ -53,29 +58,29 @@ end
 
 def column_widths(file_infos)
   {
-    link: file_infos.map { |info| info[:stat].nlink.to_s.length }.max,
-    size: file_infos.map { |info| info[:stat].size.to_s.length }.max,
+    link: file_infos.map { |info| info[:nlink].to_s.length }.max,
+    size: file_infos.map { |info| info[:size].to_s.length }.max,
     user: file_infos.map { |info| info[:user_name].length }.max,
     group: file_infos.map { |info| info[:group_name].length }.max
   }
 end
 
-def file_type(stat)
+def file_type(type)
   {
     'file' => '-',
     'link' => 'l',
     'directory' => 'd'
-  }[stat.ftype]
+  }[type]
 end
 
 def long_format_line(info, widths)
   [
-    file_type(info[:stat]) + permission_string(info[:stat].mode),
-    info[:stat].nlink.to_s.rjust(widths[:link]),
+    file_type(info[:file_type]) + permission_string(info[:mode]),
+    info[:nlink].to_s.rjust(widths[:link]),
     info[:user_name].ljust(widths[:user]),
     info[:group_name].ljust(widths[:group]),
-    info[:stat].size.to_s.rjust(widths[:size]),
-    info[:stat].mtime.strftime('%b %d %H:%M'),
+    info[:size].to_s.rjust(widths[:size]),
+    info[:mtime].strftime('%b %d %H:%M'),
     info[:file]
   ].join(' ')
 end
@@ -109,7 +114,7 @@ if options[:long]
   infos = file_infos(files)
 
   total_blocks = infos.sum do |info|
-    info[:stat].blocks
+    info[:blocks]
   end
 
   puts "total #{total_blocks}"
