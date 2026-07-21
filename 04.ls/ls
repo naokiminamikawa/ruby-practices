@@ -2,12 +2,15 @@
 # frozen_string_literal: true
 
 require 'optparse'
+require 'etc'
+
 COL = 3
 
-options = { reverse: false }
+options = { long: false }
+
 OptionParser.new do |opts|
-  opts.on('-r') do
-    options[:reverse] = true
+  opts.on('-l') do
+    options[:long] = true
   end
 end.parse!
 
@@ -15,16 +18,80 @@ def fetch_files
   Dir.glob('*')
 end
 
+def permission_string(mode)
+  permission_chars = %w[r w x]
+
+  9.times.map do |i|
+    mask = 1 << (8 - i)
+    (mode & mask).zero? ? '-' : permission_chars[i % 3]
+  end.join
+end
+
 def make_matrix(files, row, col)
   matrix = Array.new(row) { Array.new(col) }
 
   (0...files.length).each do |i|
     c, r = i.divmod(row)
-
     matrix[r][c] = files[i] if c < col
   end
 
   matrix
+end
+
+def file_infos(files)
+  files.map do |file|
+    stat = File.lstat(file)
+
+    {
+      file: file,
+      file_type: stat.ftype,
+      mode: stat.mode,
+      nlink: stat.nlink,
+      size: stat.size,
+      mtime: stat.mtime,
+      blocks: stat.blocks,
+      user_name: Etc.getpwuid(stat.uid).name,
+      group_name: Etc.getgrgid(stat.gid).name
+    }
+  end
+end
+
+def column_widths(file_infos)
+  {
+    link: file_infos.map { |info| info[:nlink].to_s.length }.max,
+    size: file_infos.map { |info| info[:size].to_s.length }.max,
+    user: file_infos.map { |info| info[:user_name].length }.max,
+    group: file_infos.map { |info| info[:group_name].length }.max
+  }
+end
+
+def file_type(type)
+  {
+    'file' => '-',
+    'link' => 'l',
+    'directory' => 'd'
+  }[type]
+end
+
+def long_format_line(info, widths)
+  [
+    file_type(info[:file_type]) + permission_string(info[:mode]),
+    info[:nlink].to_s.rjust(widths[:link]),
+    info[:user_name].ljust(widths[:user]),
+    info[:group_name].ljust(widths[:group]),
+    info[:size].to_s.rjust(widths[:size]),
+    info[:mtime].strftime('%b %d %H:%M'),
+    info[:file]
+  ].join(' ')
+end
+
+def make_long_matrix(files)
+  infos = file_infos(files)
+  widths = column_widths(infos)
+
+  infos.map do |info|
+    long_format_line(info, widths)
+  end
 end
 
 def print_matrix(matrix)
@@ -42,7 +109,23 @@ def print_matrix(matrix)
 end
 
 files = fetch_files
-files.reverse! if options[:reverse]
-row = (files.length.to_f / COL).ceil
-matrix = make_matrix(files, row, COL)
-print_matrix(matrix)
+
+if options[:long]
+  infos = file_infos(files)
+
+  total_blocks = infos.sum do |info|
+    info[:blocks]
+  end
+
+  puts "total #{total_blocks}"
+
+  widths = column_widths(infos)
+
+  infos.each do |info|
+    puts long_format_line(info, widths)
+  end
+else
+  row = (files.length.to_f / COL).ceil
+  matrix = make_matrix(files, row, COL)
+  print_matrix(matrix)
+end
