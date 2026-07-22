@@ -6,16 +6,35 @@ require 'etc'
 
 COL = 3
 
-options = { long: false }
+options = {
+  long: false,
+  all: false,
+  reverse: false
+}
 
 OptionParser.new do |opts|
   opts.on('-l') do
     options[:long] = true
   end
+
+  opts.on('-a') do
+    options[:all] = true
+  end
+
+  opts.on('-r') do
+    options[:reverse] = true
+  end
 end.parse!
 
-def fetch_files
-  Dir.glob('*')
+def fetch_files(all: false)
+  files =
+    if all
+      Dir.glob('*', File::FNM_DOTMATCH)
+    else
+      Dir.glob('*')
+    end
+
+  files.reject { |file| ['.', '..'].include?(file) }
 end
 
 def permission_string(mode)
@@ -108,7 +127,8 @@ def print_matrix(matrix)
   end
 end
 
-files = fetch_files
+files = fetch_files(all: options[:all])
+files.reverse! if options[:reverse]
 
 if options[:long]
   infos = file_infos(files)
