@@ -27,14 +27,8 @@ OptionParser.new do |opts|
 end.parse!
 
 def fetch_files(all: false)
-  files =
-    if all
-      Dir.glob('*', File::FNM_DOTMATCH)
-    else
-      Dir.glob('*')
-    end
-
-  files.reject { |file| ['.', '..'].include?(file) }
+  flags = all ? File::FNM_DOTMATCH : 0
+  Dir.glob('*', flags)
 end
 
 def permission_string(mode)
