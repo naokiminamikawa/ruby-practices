@@ -1,0 +1,88 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require 'optparse'
+
+options = {
+  lines: false,
+  words: false,
+  chars: false,
+  bytes: false
+}
+
+OptionParser.new do |opts|
+  opts.on('-l') { options[:lines] = true }
+  opts.on('-w') { options[:words] = true }
+  opts.on('-m') { options[:chars] = true }
+  opts.on('-c') { options[:bytes] = true }
+end.parse!
+
+def count_content(content)
+  {
+    lines: content.lines.count,
+    words: content.split.count,
+    chars: content.length,
+    bytes: content.bytesize
+  }
+end
+
+def count_file(file_name)
+  count_content(File.read(file_name))
+end
+
+def output_counts(result, options)
+  counts = []
+
+  counts << result[:lines] if options[:lines]
+  counts << result[:words] if options[:words]
+  counts << result[:chars] if options[:chars]
+  counts << result[:bytes] if options[:bytes]
+
+  if counts.empty?
+    counts = [
+      result[:lines],
+      result[:words],
+      result[:bytes]
+    ]
+  end
+
+  counts
+end
+
+totals = {
+  lines: 0,
+  words: 0,
+  chars: 0,
+  bytes: 0
+}
+
+if ARGV.empty?
+  content = STDIN.read
+
+  result = count_content(content)
+
+  puts output_counts(result, options).join(' ')
+
+else
+  totals = {
+    lines: 0,
+    words: 0,
+    chars: 0,
+    bytes: 0
+  }
+
+  ARGV.each do |file_name|
+    result = count_file(file_name)
+
+    totals[:lines] += result[:lines]
+    totals[:words] += result[:words]
+    totals[:chars] += result[:chars]
+    totals[:bytes] += result[:bytes]
+
+    puts "#{output_counts(result, options).join(' ')} #{file_name}"
+  end
+
+  if ARGV.size > 1
+    puts "#{output_counts(totals, options).join(' ')} total"
+  end
+end
